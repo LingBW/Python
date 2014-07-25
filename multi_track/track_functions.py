@@ -905,3 +905,64 @@ def draw_basemap(fig, ax, lonsize, latsize, interval_lon=0.5, interval_lat=0.5):
     dmap.fillcontinents(color='grey')
     dmap.drawmapboundary()
 
+def multi_track(ID, depth, days, lat_incr, lon_incr, starttime):
+    ''' 
+    This function retrieves all the data needed and returns it all
+    '''
+
+    drifter = get_drifter(ID)                                                # Retrive drifter data
+    print ID
+
+    if starttime:
+
+        if days:
+            nodes_drifter = drifter.get_track(starttime,days)
+
+        else:
+            nodes_drifter = drifter.get_track(starttime)
+        
+    else:
+        nodes_drifter = drifter.get_track()
+       
+    ''' determine latitude, longitude, start, and end times of the drifter?'''     
+
+    lon, lat = nodes_drifter['lon'][0], nodes_drifter['lat'][0]
+    # adjust for the added 5 hours in the models
+    starttime = nodes_drifter['time'][0]-timedelta(hours=5)
+    endtime = nodes_drifter['time'][-1]-timedelta(hours=5)
+    print starttime
+
+    ''' read data points from fvcom and roms websites and store them'''
+    mod = '30yr'                                                           # mod has to be '30yr' or 'GOM3' or 'massbay'
+    get_fvcom_obj = get_fvcom(mod)
+    url_fvcom = get_fvcom_obj.get_url(starttime, endtime)
+    nodes_fvcom = get_fvcom_obj.get_track(lon,lat,depth,url_fvcom)           # iterates fvcom's data
+    get_roms_obj = get_roms()
+    url_roms = get_roms_obj.get_url(starttime, endtime)
+    nodes_roms = get_roms_obj.get_track(lon, lat, depth, url_roms)
+
+    if type(nodes_roms['lat']) == np.float64:                             # ensures that the single point case still functions properly
+    
+        nodes_roms['lon'] = [nodes_roms['lon']] 
+        nodes_roms['lat'] = [nodes_roms['lat']]
+    
+    '''Calculate the distance seperation'''
+
+    dist_roms = distance((nodes_drifter['lat'][-1],nodes_drifter['lon'][-1]),(nodes_roms['lat'][-1],nodes_roms['lon'][-1]))
+    dist_fvcom = distance((nodes_drifter['lat'][-1],nodes_drifter['lon'][-1]),(nodes_fvcom['lat'][-1],nodes_fvcom['lon'][-1]))
+    print 'The seperation of roms was %f and of fvcom was %f kilometers from drifter %s' % (dist_roms[0], dist_fvcom[0], ID )
+
+    ''' set latitude and longitude arrays for basemap'''
+
+    lonsize = [min_data(nodes_drifter['lon'],nodes_fvcom['lon']),
+             max_data(nodes_drifter['lon'],nodes_fvcom['lon'])]
+    latsize = [min_data(nodes_drifter['lat'],nodes_fvcom['lat']),
+             max_data(nodes_drifter['lat'],nodes_fvcom['lat'])]
+    
+    diff_lon = .1
+    diff_lat = .1
+        
+    lonsize = [lonsize[0]-diff_lon,lonsize[1]+diff_lon]
+    latsize = [latsize[0]-diff_lat,latsize[1]+diff_lat]
+    
+    return nodes_drifter, nodes_roms, nodes_fvcom, lonsize, latsize, starttime
