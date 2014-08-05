@@ -59,6 +59,22 @@ def dm2dd(lat,lon):
         dd=float(d)
         lon_value=cc+(dd/60.)
     return lat_value, -lon_value
+def getrawdrift(did,filename):
+   '''
+   routine to get raw drifter data from ascii files on line
+   '''
+   url='http://nefsc.noaa.gov/drifter/'+filename
+   print url
+   df=pd.read_csv(url,header=None, delimiter=r"\s+")
+   # make a datetime
+   dtime=[]
+   index = np.where(df[0]==int(did))[0]
+   newData = df.ix[index]
+   for k in newData[0].index:
+      #dt1=dt.datetime(int(filename[-10:-6]),df[2][k],df[3][k],df[4][k],df[5][k],0,0,pytz.utc)
+      dt1=datetime(2014, newData[2][k],newData[3][k],newData[4][k],newData[5][k],0,0,pytz.utc)
+      dtime.append(dt1)
+   return newData[8],newData[7],dtime,newData[9]
 
 def getdrift(did):
     """
@@ -342,8 +358,8 @@ class get_roms(track):
         '''
         get url according to starttime and endtime.
         '''
+        '''
         self.starttime = starttime
-        
         url_oceantime = 'http://tds.marine.rutgers.edu:8080/thredds/dodsC/roms/espresso/2006_da/his?ocean_time[0:1:69911]'
         data_oceantime = netCDF4.Dataset(url_oceantime)
         t1 = (starttime - datetime(2006,01,01,0,0,0,0,pytz.utc)).total_seconds()
@@ -353,7 +369,24 @@ class get_roms(track):
         url = 'http://tds.marine.rutgers.edu:8080/thredds/dodsC/roms/espresso/2006_da/his?h[0:1:81][0:1:129],s_rho[0:1:35],lon_rho[0:1:81][0:1:129],lat_rho[0:1:81][0:1:129],mask_rho[0:1:81][0:1:129],u[{0}:1:{1}][0:1:35][0:1:81][0:1:128],v[{0}:1:{1}][0:1:35][0:1:80][0:1:129]'
         url = url.format(index1, index2)
         return url
-        
+        '''
+        self.starttime = starttime
+        # self.hours = int((endtime-starttime).total_seconds()/60/60) # get total hours
+        # time_r = datetime(year=2006,month=1,day=9,hour=1,minute=0)
+        # url_oceantime = 'http://tds.marine.rutgers.edu:8080/thredds/dodsC/roms/espresso/2006_da/his?ocean_time[0:1:69911]'
+        url_oceantime = 'http://tds.marine.rutgers.edu:8080/thredds/dodsC/roms/espresso/2013_da/his_Best/ESPRESSO_Real-Time_v2_History_Best_Available_best.ncd?time'
+        self.oceantime = netCDF4.Dataset(url_oceantime).variables['time'][:]
+        t1 = (starttime - datetime(2013,05,18, tzinfo=pytz.UTC)).total_seconds()/3600 # for url2006 it's 2006,01,01
+        t2 = (endtime - datetime(2013,05,18, tzinfo=pytz.UTC)).total_seconds()/3600
+        self.index1 = self.__closest_num(t1, self.oceantime)
+        self.index2 = self.__closest_num(t2, self.oceantime)
+        # index1 = (starttime - time_r).total_seconds()/60/60
+        # index2 = index1 + self.hours
+        # url = 'http://tds.marine.rutgers.edu:8080/thredds/dodsC/roms/espresso/2006_da/his?h[0:1:81][0:1:129],s_rho[0:1:35],lon_rho[0:1:81][0:1:129],lat_rho[0:1:81][0:1:129],mask_rho[0:1:81][0:1:129],u[{0}:1:{1}][0:1:35][0:1:81][0:1:128],v[{0}:1:{1}][0:1:35][0:1:80][0:1:129]'
+        # url = 'http://tds.marine.rutgers.edu:8080/thredds/dodsC/roms/espresso/2006_da/his?s_rho[0:1:35],h[0:1:81][0:1:129],lon_rho[0:1:81][0:1:129],lat_rho[0:1:81][0:1:129],temp[{0}:1:{1}][0:1:35][0:1:81][0:1:129],ocean_time'
+        url = 'http://tds.marine.rutgers.edu:8080/thredds/dodsC/roms/espresso/2013_da/his_Best/ESPRESSO_Real-Time_v2_History_Best_Available_best.ncd?h[0:1:81][0:1:129],s_rho[0:1:35],lon_rho[0:1:81][0:1:129],lat_rho[0:1:81][0:1:129],temp[{0}:1:{1}][0:1:35][0:1:81][0:1:129],time,mask_rho[0:1:81][0:1:129],u[{0}:1:{1}][0:1:35][0:1:81][0:1:128],v[{0}:1:{1}][0:1:35][0:1:80][0:1:129]'     
+        url = url.format(self.index1, self.index2)
+        return url
     def __closest_num(self, num, numlist, i=0):
         '''
         Return index of the closest number in the list
@@ -421,7 +454,7 @@ class get_roms(track):
         mask = data['mask_rho'][:]
         lon_rho = data['lon_rho'][:]
         lat_rho = data['lat_rho'][:]
-        lons, lats = lon_rho[:-2, :-2], lat_rho[:-2, :-2]
+        lons, lats = lon_rho[:-1, :-1], lat_rho[:-1, :-1]
         index, nearestdistance = self.nearest_point_index(lon,lat,lons,lats)
         depth_layers = data['h'][index[0][0]][index[1][0]]*data['s_rho']
         layer = np.argmin(abs(depth_layers+depth))
@@ -429,8 +462,8 @@ class get_roms(track):
         v = data['v'][:,layer]
         
         for i in range(0, len(u)):
-            u_t = u[i][:-2, :]
-            v_t = v[i][:,:-2]
+            u_t = u[i][:-1, :]
+            v_t = v[i][:, :-1]
             u_p = u_t[index[0][0]][index[1][0]]
             v_p = v_t[index[0][0]][index[1][0]]
 
@@ -440,8 +473,10 @@ class get_roms(track):
             
             dx = 60*60*float(u_p)
             dy = 60*60*float(v_p)
+            print u_p, v_p
             lon = lon + dx/(111111*np.cos(lat*np.pi/180))
             lat = lat + dy/111111
+            print lon, lat
             index, nearestdistance = self.nearest_point_index(lon,lat,lons,lats)
             nodes['lon'] = np.append(nodes['lon'],lon)
             nodes['lat'] = np.append(nodes['lat'],lat)
@@ -609,10 +644,9 @@ class get_fvcom(track):
             url = url_v12.format(year, month, start, end)
             
         elif version == '13':
-            url = url_v13.format(year, month, start, end)
-            
+            url = url_v13.format(year, month, start, end) 
         return url
-        
+
     def get_data(self,url):
         '''
         ??? Retrieves data?
@@ -693,24 +727,25 @@ class get_fvcom(track):
         
 class get_drifter(track):
 
-    def __init__(self, drifter_id):
+    def __init__(self, drifter_id, filename=None):
         self.drifter_id = drifter_id
-        
+        self.filename = filename
     def get_track(self, starttime=None, days=None):
         '''
         return drifter nodes
         if starttime is given, return nodes started from starttime
         if both starttime and days are given, return nodes of the specific time period
         '''
+        if self.filename:
+            temp=getrawdrift(self.drifter_id,self.filename)
+        else:
+            temp=getdrift(self.drifter_id)
         nodes = {}
-        temp = getdrift(self.drifter_id)
         nodes['lon'] = np.array(temp[1])
         nodes['lat'] = np.array(temp[0])
         nodes['time'] = np.array(temp[2])
         starttime = np.array(temp[2][0])
-        
         if bool(starttime):
-            
             if bool(days):
                 endtime = starttime + timedelta(days=days)
                 i = self.__cmptime(starttime, nodes['time'])
