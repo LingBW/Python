@@ -35,12 +35,12 @@ DEPTH = -1.                         # depth of drogue in meters
 # starttime = datetime(2011,5,12,13,0,0,0,pytz.UTC)
 starttime = None
 DAYS = 1                           # length of time wanted in track
-MODEL = 'BOTH'                    # model has to to 'FVCOM' or 'ROMS' or 'BOTH'
+MODEL = 'BOTH'                     # model has to to 'FVCOM' or 'ROMS' or 'BOTH'
 # If MODEL is 'FVCOM' or 'BOTH', you need to specify the grid used in fvcom.
-GRID = 'massbay'                       # gird has to be '30yr' or 'GOM3', or 'massbay'('GOM3' and 'massbay' is forecast)
-f = 'FORECAST'                    # 'FORECAST' or 'HIGHCAST'
+GRID = 'massbay'                       # gird has to be '30yr' or 'GOM3', or 'massbay'(both 'GOM3' and 'massbay' are forecast)
+f = 'HINDCAST'                    # 'FORECAST' or 'HIGHCAST'
 for ID in drifter_ids:
-    print ID   
+    print "ID: ", ID
     if FILENAME:
         drifter = get_drifter(ID, FILENAME)
     else:
@@ -62,7 +62,7 @@ for ID in drifter_ids:
         index = np.where(abs(l1-l2)==min(abs(l1-l2)))[0][0]
         lon, lat = points_drifter['lon'][index], points_drifter['lat'][index]
     elif f == 'FORECAST':
-        starttime = endtime
+        starttime = points_drifter['time'][-1]
         endtime = starttime + timedelta(days=DAYS)
         lon, lat = points_drifter['lon'][-1], points_drifter['lat'][-1]
     # read data points from fvcom and roms websites and store them
@@ -89,7 +89,6 @@ for ID in drifter_ids:
             '''
         get_fvcom_obj = get_fvcom(GRID)
         url_fvcom = get_fvcom_obj.get_url(starttime, endtime)
-        print url_fvcom
         points_fvcom = get_fvcom_obj.get_track(lon,lat,DEPTH,url_fvcom)           # iterates fvcom's data
         dist_fvcom = distance((points_drifter['lat'][-1],points_drifter['lon'][-1]),(points_fvcom['lat'][-1],points_fvcom['lon'][-1]))
         print 'The separation of fvcom was %f kilometers for drifter %s' % (dist_fvcom[0], ID )
@@ -122,4 +121,4 @@ for ID in drifter_ids:
     plt.ylabel('Latitude')
     plt.show()
     # plt.savefig('plots/'+MODEL+str(ID)+'.png')
-    plt.savefig('MODEL'+str(ID)+'.png', dpi=200)
+    plt.savefig('MODEL-' + str(ID) +'-%s.png' % f, dpi=200)
