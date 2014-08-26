@@ -380,11 +380,13 @@ class get_roms(track):
         t2 = (endtime - datetime(2013,05,18, tzinfo=pytz.UTC)).total_seconds()/3600
         self.index1 = self.__closest_num(t1, self.oceantime)
         self.index2 = self.__closest_num(t2, self.oceantime)
+        print self.index1, self.index2
         # index1 = (starttime - time_r).total_seconds()/60/60
         # index2 = index1 + self.hours
         # url = 'http://tds.marine.rutgers.edu:8080/thredds/dodsC/roms/espresso/2006_da/his?h[0:1:81][0:1:129],s_rho[0:1:35],lon_rho[0:1:81][0:1:129],lat_rho[0:1:81][0:1:129],mask_rho[0:1:81][0:1:129],u[{0}:1:{1}][0:1:35][0:1:81][0:1:128],v[{0}:1:{1}][0:1:35][0:1:80][0:1:129]'
         # url = 'http://tds.marine.rutgers.edu:8080/thredds/dodsC/roms/espresso/2006_da/his?s_rho[0:1:35],h[0:1:81][0:1:129],lon_rho[0:1:81][0:1:129],lat_rho[0:1:81][0:1:129],temp[{0}:1:{1}][0:1:35][0:1:81][0:1:129],ocean_time'
-        url = 'http://tds.marine.rutgers.edu:8080/thredds/dodsC/roms/espresso/2013_da/his_Best/ESPRESSO_Real-Time_v2_History_Best_Available_best.ncd?h[0:1:81][0:1:129],s_rho[0:1:35],lon_rho[0:1:81][0:1:129],lat_rho[0:1:81][0:1:129],temp[{0}:1:{1}][0:1:35][0:1:81][0:1:129],time,mask_rho[0:1:81][0:1:129],u[{0}:1:{1}][0:1:35][0:1:81][0:1:128],v[{0}:1:{1}][0:1:35][0:1:80][0:1:129]'     
+        # This one is hourly # url = 'http://tds.marine.rutgers.edu:8080/thredds/dodsC/roms/espresso/2013_da/his_Best/ESPRESSO_Real-Time_v2_History_Best_Available_best.ncd?h[0:1:81][0:1:129],s_rho[0:1:35],lon_rho[0:1:81][0:1:129],lat_rho[0:1:81][0:1:129],temp[{0}:1:{1}][0:1:35][0:1:81][0:1:129],time,mask_rho[0:1:81][0:1:129],u[{0}:1:{1}][0:1:35][0:1:81][0:1:128],v[{0}:1:{1}][0:1:35][0:1:80][0:1:129]'     
+        url = 'http://tds.marine.rutgers.edu:8080/thredds/dodsC/roms/espresso/2013_da/his_Best/ESPRESSO_Real-Time_v2_History_Best_Available_best.ncd?h[0:1:81][0:1:129],s_rho[0:1:35],lon_rho[0:1:81][0:1:129],lat_rho[0:1:81][0:1:129],temp[{0}:1:{1}][0:1:35][0:1:81][0:1:129],time,mask_rho[0:1:81][0:1:129],u[{0}:1:{1}][0:1:35][0:1:81][0:1:128],v[{0}:1:{1}][0:1:35][0:1:80][0:1:129]'      
         url = url.format(self.index1, self.index2)
         return url
     def __closest_num(self, num, numlist, i=0):
@@ -473,11 +475,14 @@ class get_roms(track):
             
             dx = 60*60*float(u_p)
             dy = 60*60*float(v_p)
-            print u_p, v_p
             lon = lon + dx/(111111*np.cos(lat*np.pi/180))
             lat = lat + dy/111111
             print lon, lat
-            index, nearestdistance = self.nearest_point_index(lon,lat,lons,lats)
+            try:
+                index, nearestdistance = self.nearest_point_index(lon,lat,lons,lats)
+            except(Exception):
+                print 'Point hits land or model boundary'
+                break
             nodes['lon'] = np.append(nodes['lon'],lon)
             nodes['lat'] = np.append(nodes['lat'],lat)
         return nodes
@@ -507,7 +512,7 @@ class get_fvcom(track):
                 print yearnum
                 index1 = int(26340+35112*(yearnum/4)+8772*(yearnum%4)+1+self.hours)
                 index2 = index1 + self.hours
-                furl = 'http://www.smast.umassd.edu:8080/thredds/dodsC/fvcom/hindcasts/30yr_gom3?h[0:1:48450],lat[0:1:48450],latc[0:1:90414],lon[0:1:48450],lonc[0:1:90414],u[{0}:1:{1}][0:1:44][0:1:90414],v[{0}:1:{1}][0:1:44][0:1:90414],siglay'
+                furl = 'http://www.smast.umassd.edu:8080/thredds/dodsC/fvcom/hindcasts/30yr_gom3?h[0:1:48450],lat[0:1:48450],latc[0:1:90414],lon[0:1:48450],lonc[0:1:90414],u[{0}:1:{1}][0:1:44][0:1:90414],v[{0}:1:{1}][0:1:44][0:1:90414],siglay,h'
                 url.append(furl.format(index1, index2)) 
                 
             elif time1 <= endtime < time2: # endtime is in GOM3_v11
@@ -521,20 +526,19 @@ class get_fvcom(track):
         elif self.modelname is "GOM3":
             url = 'http://www.smast.umassd.edu:8080/thredds/dodsC/FVCOM/NECOFS/Forecasts/NECOFS_GOM3_FORECAST.nc?lon[0:1:51215],lat[0:1:51215],lonc[0:1:95721],latc[0:1:95721],siglay[0:1:39][0:1:51215],h[0:1:51215],u[{0}:1:{1}][0:1:39][0:1:95721],v[{0}:1:{1}][0:1:39][0:1:95721]'
             current_time = pytz.utc.localize(datetime.now().replace(hour=0,minute=0))
-            period = starttime-\
-                     (current_time-timedelta(days=3))
-            index1 = int(period.total_seconds()/60/60)
+            period = starttime-(current_time-timedelta(days=3))
+            index1 = int(period.total_seconds()/3600)
             index2 = index1 + self.hours
             url = url.format(index1, index2)
             
         elif self.modelname is "massbay":
             url = 'http://www.smast.umassd.edu:8080/thredds/dodsC/models/fvcom/NECOFS/Forecasts/NECOFS_FVCOM_OCEAN_MASSBAY_FORECAST.nc?lon[0:1:98431],lat[0:1:98431],lonc[0:1:165094],latc[0:1:165094],siglay[0:1:9][0:1:98431],h[0:1:98431],u[{0}:1:{1}][0:1:9][0:1:165094],v[{0}:1:{1}][0:1:9][0:1:165094]'
-            period = starttime-\
-                     (datetime.now().replace(hour=0,minute=0)-timedelta(days=3))
-            index1 = int(period.total_seconds()/60/60)
+            current_time = pytz.utc.localize(datetime.now().replace(hour=0,minute=0))
+            period = starttime-(current_time-timedelta(days=3))
+            index1 = int(period.total_seconds()/3600)
             index2 = index1 + self.hours
             url = url.format(index1, index2)
-            
+
         return url
         
     def __temp(self, starttime, endtime, time1, time2):
@@ -665,7 +669,6 @@ class get_fvcom(track):
             temp = self.__get_track(lon, lat, depth, url)
             nodes['lon'].extend(temp['lon'])
             nodes['lat'].extend(temp['lat'])
-            
         else:
             nodes = dict(lon=[lon],lat=[lat])
             
@@ -940,64 +943,3 @@ def draw_basemap(fig, ax, lonsize, latsize, interval_lon=0.5, interval_lat=0.5):
     dmap.fillcontinents(color='grey')
     dmap.drawmapboundary()
 
-def multi_track(ID, depth, days, lat_incr, lon_incr, starttime):
-    ''' 
-    This function retrieves all the data needed and returns it all
-    '''
-
-    drifter = get_drifter(ID)                                                # Retrive drifter data
-    print ID
-
-    if starttime:
-
-        if days:
-            nodes_drifter = drifter.get_track(starttime,days)
-
-        else:
-            nodes_drifter = drifter.get_track(starttime)
-        
-    else:
-        nodes_drifter = drifter.get_track()
-       
-    ''' determine latitude, longitude, start, and end times of the drifter?'''     
-
-    lon, lat = nodes_drifter['lon'][0], nodes_drifter['lat'][0]
-    # adjust for the added 5 hours in the models
-    starttime = nodes_drifter['time'][0]-timedelta(hours=5)
-    endtime = nodes_drifter['time'][-1]-timedelta(hours=5)
-    print starttime
-
-    ''' read data points from fvcom and roms websites and store them'''
-    mod = '30yr'                                                           # mod has to be '30yr' or 'GOM3' or 'massbay'
-    get_fvcom_obj = get_fvcom(mod)
-    url_fvcom = get_fvcom_obj.get_url(starttime, endtime)
-    nodes_fvcom = get_fvcom_obj.get_track(lon,lat,depth,url_fvcom)           # iterates fvcom's data
-    get_roms_obj = get_roms()
-    url_roms = get_roms_obj.get_url(starttime, endtime)
-    nodes_roms = get_roms_obj.get_track(lon, lat, depth, url_roms)
-
-    if type(nodes_roms['lat']) == np.float64:                             # ensures that the single point case still functions properly
-    
-        nodes_roms['lon'] = [nodes_roms['lon']] 
-        nodes_roms['lat'] = [nodes_roms['lat']]
-    
-    '''Calculate the distance seperation'''
-
-    dist_roms = distance((nodes_drifter['lat'][-1],nodes_drifter['lon'][-1]),(nodes_roms['lat'][-1],nodes_roms['lon'][-1]))
-    dist_fvcom = distance((nodes_drifter['lat'][-1],nodes_drifter['lon'][-1]),(nodes_fvcom['lat'][-1],nodes_fvcom['lon'][-1]))
-    print 'The seperation of roms was %f and of fvcom was %f kilometers from drifter %s' % (dist_roms[0], dist_fvcom[0], ID )
-
-    ''' set latitude and longitude arrays for basemap'''
-
-    lonsize = [min_data(nodes_drifter['lon'],nodes_fvcom['lon']),
-             max_data(nodes_drifter['lon'],nodes_fvcom['lon'])]
-    latsize = [min_data(nodes_drifter['lat'],nodes_fvcom['lat']),
-             max_data(nodes_drifter['lat'],nodes_fvcom['lat'])]
-    
-    diff_lon = .1
-    diff_lat = .1
-        
-    lonsize = [lonsize[0]-diff_lon,lonsize[1]+diff_lon]
-    latsize = [latsize[0]-diff_lat,latsize[1]+diff_lat]
-    
-    return nodes_drifter, nodes_roms, nodes_fvcom, lonsize, latsize, starttime
