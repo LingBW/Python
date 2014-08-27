@@ -61,7 +61,7 @@ def dm2dd(lat,lon):
     return lat_value, -lon_value
 def getrawdrift(did,filename):
    '''
-   routine to get raw drifter data from ascii files on line
+   routine to get raw drifter data from ascii files posted on the web
    '''
    url='http://nefsc.noaa.gov/drifter/'+filename
    print url
