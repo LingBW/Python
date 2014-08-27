@@ -25,20 +25,20 @@ import netCDF4
 import track_functions  # all homegrown functions needed for this routine
 from track_functions import *
 
-# Step 2: Hardcode constants'''
+# Step 2: Hardcode constants
 # some of the drifters apparently test by Conner
 #drifter_ids = ['115410701','118410701','108410712','108420701','110410711','110410712','110410713','110410714',
 #               '110410715','110410716','114410701','115410701','115410702','119410714','135410701','110410713','119410716']                                                  # Default drifter ID
-drifter_ids = ['148410701']  # ['147420706', '146410702','148410723', '148410701','148410727', '148410729']
-FILENAME = 'drift_X.dat'            # if new data, use this.
+drifter_ids = ['138410721']  # ['147420706', '146410702','148410723', '148410701','148410727', '148410729'] ['138410721']
+FILENAME = None            # if new data, use "drift_X.dat".
 DEPTH = -1.                         # depth of drogue in meters
 # starttime = datetime(2011,5,12,13,0,0,0,pytz.UTC)
 starttime = None
 DAYS = 1                           # length of time wanted in track
 MODEL = 'BOTH'                     # model has to to 'FVCOM' or 'ROMS' or 'BOTH'
 # If MODEL is 'FVCOM' or 'BOTH', you need to specify the grid used in fvcom.
-GRID = 'massbay'                       # gird has to be '30yr' or 'GOM3', or 'massbay'(both 'GOM3' and 'massbay' are forecast)
-f = 'HINDCAST'                    # 'FORECAST' or 'HIGHCAST'
+GRID = '30yr'                       # gird has to be '30yr' or 'GOM3', or 'massbay'(both 'GOM3' and 'massbay' are forecast)
+FOH = 'HINDCAST'                    # 'FORECAST' or 'HIGHCAST'
 for ID in drifter_ids:
     print "ID: ", ID
     if FILENAME:
@@ -52,7 +52,7 @@ for ID in drifter_ids:
             points_drifter = drifter.get_track(starttime)
     else:
         points_drifter = drifter.get_track()
-    if f == 'HINDCAST':
+    if FOH == 'HINDCAST':
         # adjust for the added 5 hours in the models
         starttime = pytz.utc.localize(datetime.now().replace(hour=0,minute=0)-timedelta(days=3))
         endtime = points_drifter['time'][-1]
@@ -61,10 +61,14 @@ for ID in drifter_ids:
         l2 = starttime - points_drifter['time'][0]
         index = np.where(abs(l1-l2)==min(abs(l1-l2)))[0][0]
         lon, lat = points_drifter['lon'][index], points_drifter['lat'][index]
-    elif f == 'FORECAST':
+    elif FOH == 'FORECAST':
         starttime = points_drifter['time'][-1]
-        endtime = starttime + timedelta(days=DAYS)
+        endtime = starttime + timedelta(days=DAYS) 
         lon, lat = points_drifter['lon'][-1], points_drifter['lat'][-1]
+    if GRID == '30yr':
+        starttime = points_drifter['time'][0]
+        endtime = points_drifter['time'][-1]
+        lon, lat = points_drifter['lon'][0], points_drifter['lat'][0]
     # read data points from fvcom and roms websites and store them
 
     #set latitude and longitude arrays for basemap
@@ -81,12 +85,6 @@ for ID in drifter_ids:
     ax.plot(points_drifter['lon'],points_drifter['lat'],'ro-',label='drifter')
     ax.plot(points_drifter['lon'][0],points_drifter['lat'][0],'c.',label='Startpoint',markersize=20)
     if MODEL in ('FVCOM', 'BOTH'):
-        '''
-        if GRID in ('GOM3', 'massbay'):
-            starttime = endtime
-            endtime = starttime + timedelta(days = DAYS)
-            lon, lat = points_drifter['lon'][-1], points_drifter['lat'][-1]
-            '''
         get_fvcom_obj = get_fvcom(GRID)
         url_fvcom = get_fvcom_obj.get_url(starttime, endtime)
         points_fvcom = get_fvcom_obj.get_track(lon,lat,DEPTH,url_fvcom)           # iterates fvcom's data
