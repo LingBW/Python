@@ -27,15 +27,15 @@ from track_functions import * # all homegrown functions needed for this routine
 # some of the drifters apparently test by Conner
 #drifter_ids = ['115410701','118410701','108410712','108420701','110410711','110410712','110410713','110410714',
 #               '110410715','110410716','114410701','115410701','115410702','119410714','135410701','110410713','119410716']                                                  # Default drifter ID
-drifter_ids = ['138410721']  # ['147420706', '146410702','148410723', '148410701','148410727', '148410729'] ['138410721']
+drifter_ids = ['147420706']  # ['147420706', '146410702','148410723', '148410701','148410727', '148410729'] ['138410721']
 USE = 'HINDCAST'             # 'FORECAST' or 'HIHDCAST'
-FILENAME = None              # if new data, use "drift_X.dat".
+FILENAME = 'drift_X.dat'              # if new data, use "drift_X.dat".
 DEPTH = -1.                  # depth of drogue in meters
 # starttime = datetime(2011,5,12,13,0,0,0,pytz.UTC)
 starttime = None             # If it's None, use the current time.
 DAYS = 1                     # Number or None. Length of time wanted in track, if not given, track to the last poistion of drifter.
 MODEL = 'BOTH'               # 'FVCOM', 'ROMS' or 'BOTH'
-GRID = '30yr'                # '30yr', 'GOM3' or 'massbay'(both 'GOM3' and 'massbay' are forecast), only used in fvcom.
+GRID = 'GOM3'                # '30yr', 'GOM3' or 'massbay'(both 'GOM3' and 'massbay' are forecast), only used in fvcom.
 
 for ID in drifter_ids:
     print "ID: ", ID
@@ -64,7 +64,7 @@ for ID in drifter_ids:
         else:                  # if '30yr' or 'GOM3'
             starttime = points_drifter['time'][0]
             endtime = points_drifter['time'][-1]
-            lon, lat = points_drifter['lon'][0], points_drifter['lat'][-1]
+            lon, lat = points_drifter['lon'][0], points_drifter['lat'][0]
     elif USE == 'FORECAST':
         starttime = points_drifter['time'][-1]
         endtime = starttime + timedelta(days=DAYS) 
