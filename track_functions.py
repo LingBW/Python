@@ -229,7 +229,7 @@ def data_extracted(filename,drifter_id=None,starttime=None):
     #         data['lon'] = dlon[i[0]:i[-1]+1][j[0]:]
     #         data['lat'] = dlat[i[0]:i[-1]+1][j[0]:]
     #     except ValueError:
-    #         data['time'] = dtime[i[0]:i[-1]+1]
+   #         data['time'] = dtime[i[0]:i[-1]+1]
     #         data['lon'] = dlon[i[0]:i[-1]+1]
     #         data['lat'] = dlat[i[0]:i[-1]+1]
     # except ValueError:
@@ -748,21 +748,20 @@ class get_drifter(track):
         nodes['lat'] = np.array(temp[0])
         nodes['time'] = np.array(temp[2])
         starttime = np.array(temp[2][0])
-        if bool(starttime):
-            if bool(days):
-                endtime = starttime + timedelta(days=days)
-                i = self.__cmptime(starttime, nodes['time'])
-                j = self.__cmptime(endtime, nodes['time'])
-                nodes['lon'] = nodes['lon'][i:j+1]
-                nodes['lat'] = nodes['lat'][i:j+1]
-                nodes['time'] = nodes['time'][i:j+1]
-                
-            else:
-                i = self.__cmptime(starttime, nodes['time'])
-                nodes['lon'] = nodes['lon'][i:-1]
-                nodes['lat'] = nodes['lat'][i:-1]
-                nodes['time'] = nodes['time'][i:-1]
-                
+        if not starttime:
+            starttime = np.array(temp[2][0])
+        if days:
+            endtime = starttime + timedelta(days=days)
+            i = self.__cmptime(starttime, nodes['time'])
+            j = self.__cmptime(endtime, nodes['time'])
+            nodes['lon'] = nodes['lon'][i:j+1]
+            nodes['lat'] = nodes['lat'][i:j+1]
+            nodes['time'] = nodes['time'][i:j+1]
+        else:
+            i = self.__cmptime(starttime, nodes['time'])
+            nodes['lon'] = nodes['lon'][i:-1]
+            nodes['lat'] = nodes['lat'][i:-1]
+            nodes['time'] = nodes['time'][i:-1]
         return nodes
         
     def __cmptime(self, time, times):
