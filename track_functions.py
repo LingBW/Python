@@ -527,6 +527,8 @@ class get_fvcom(track):
             url = 'http://www.smast.umassd.edu:8080/thredds/dodsC/FVCOM/NECOFS/Forecasts/NECOFS_GOM3_FORECAST.nc?lon[0:1:51215],lat[0:1:51215],lonc[0:1:95721],latc[0:1:95721],siglay[0:1:39][0:1:51215],h[0:1:51215],u[{0}:1:{1}][0:1:39][0:1:95721],v[{0}:1:{1}][0:1:39][0:1:95721]'
             current_time = pytz.utc.localize(datetime.now().replace(hour=0,minute=0))
             period = starttime-(current_time-timedelta(days=3))
+            if period.total_seconds()<0:
+                raise IndexError('GOM3 only works between 3days before and 3daysafter.')
             index1 = int(period.total_seconds()/3600)
             index2 = index1 + self.hours
             url = url.format(index1, index2)
@@ -535,6 +537,8 @@ class get_fvcom(track):
             url = 'http://www.smast.umassd.edu:8080/thredds/dodsC/models/fvcom/NECOFS/Forecasts/NECOFS_FVCOM_OCEAN_MASSBAY_FORECAST.nc?lon[0:1:98431],lat[0:1:98431],lonc[0:1:165094],latc[0:1:165094],siglay[0:1:9][0:1:98431],h[0:1:98431],u[{0}:1:{1}][0:1:9][0:1:165094],v[{0}:1:{1}][0:1:9][0:1:165094]'
             current_time = pytz.utc.localize(datetime.now().replace(hour=0,minute=0))
             period = starttime-(current_time-timedelta(days=3))
+            if period.total_seconds()<0:
+                raise IndexError('massbay only works between 3days before and 3days after.')
             index1 = int(period.total_seconds()/3600)
             index2 = index1 + self.hours
             url = url.format(index1, index2)
