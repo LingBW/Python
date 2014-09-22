@@ -18,57 +18,58 @@ from datetime import datetime, timedelta
 from matplotlib import path
 import calendar
 import pytz
-from matplotlib import path
 import pandas as pd
 sys.path.append('../bin')
 import netCDF4 
-import track_functions  # all homegrown functions needed for this routine
-from track_functions import *
+from track_functions import * # all homegrown functions needed for this routine
 
 # Step 2: Hardcode constants
 # some of the drifters apparently test by Conner
 #drifter_ids = ['115410701','118410701','108410712','108420701','110410711','110410712','110410713','110410714',
 #               '110410715','110410716','114410701','115410701','115410702','119410714','135410701','110410713','119410716']                                                  # Default drifter ID
 drifter_ids = ['138410721']  # ['147420706', '146410702','148410723', '148410701','148410727', '148410729'] ['138410721']
-FILENAME = None            # if new data, use "drift_X.dat".
-DEPTH = -1.                         # depth of drogue in meters
+USE = 'HINDCAST'             # 'FORECAST' or 'HIHDCAST'
+FILENAME = None              # if new data, use "drift_X.dat".
+DEPTH = -1.                  # depth of drogue in meters
 # starttime = datetime(2011,5,12,13,0,0,0,pytz.UTC)
-starttime = None
-DAYS = 1                           # length of time wanted in track
-MODEL = 'BOTH'                     # model has to to 'FVCOM' or 'ROMS' or 'BOTH'
-# If MODEL is 'FVCOM' or 'BOTH', you need to specify the grid used in fvcom.
-GRID = '30yr'                       # gird has to be '30yr' or 'GOM3', or 'massbay'(both 'GOM3' and 'massbay' are forecast)
-FOH = 'HINDCAST'                    # 'FORECAST' or 'HIGHCAST'
+starttime = None             # If it's None, use the current time.
+DAYS = 1                     # Number or None. Length of time wanted in track, if not given, track to the last poistion of drifter.
+MODEL = 'BOTH'               # 'FVCOM', 'ROMS' or 'BOTH'
+GRID = '30yr'                # '30yr', 'GOM3' or 'massbay'(both 'GOM3' and 'massbay' are forecast), only used in fvcom.
+
 for ID in drifter_ids:
     print "ID: ", ID
-    if FILENAME:
-        drifter = get_drifter(ID, FILENAME)
-    else:
-        drifter = get_drifter(ID)
-    if starttime:
-        if DAYS:
-            points_drifter = drifter.get_track(starttime,DAYS)
-        else:
-            points_drifter = drifter.get_track(starttime)
-    else:
-        points_drifter = drifter.get_track()
-    if FOH == 'HINDCAST':
+    drifter = get_drifter(ID, FILENAME)# New drifter data or old drifter data
+    points_drifter = drifter.get_track(starttime,DAYS)
+    if USE == 'HINDCAST':
         # adjust for the added 5 hours in the models
-        starttime = pytz.utc.localize(datetime.now().replace(hour=0,minute=0)-timedelta(days=3))
-        endtime = points_drifter['time'][-1]
-        # determine latitude, longitude, start, and end times of the drifter?
-        l1 = points_drifter['time']-points_drifter['time'][0]
-        l2 = starttime - points_drifter['time'][0]
-        index = np.where(abs(l1-l2)==min(abs(l1-l2)))[0][0]
-        lon, lat = points_drifter['lon'][index], points_drifter['lat'][index]
-    elif FOH == 'FORECAST':
+        if GRID == 'massbay':
+           time1 = pytz.utc.localize(datetime.now().replace(hour=0,minute=0))-timedelta(days=3)
+           # get starttime, and lon, lat
+           if starttime:
+               if starttime < time1:
+                   raise Exception('start time should be later than time that 3days before today.')
+               l1 = points_drifter['time']-points_drifter['time'][0]
+               l2 = starttime - points_drifter['time'][0]
+               index = np.where(abs(l1-l2)==min(abs(l1-l2)))[0][0]
+               lon, lat = points_drifter['lon'][index], points_drifter['lat'][index]
+           else:
+               starttime = time1
+               lon, lat = points_drifter['lon'][0], points_drifter['lat'][0]
+           # get endtime
+           if DAYS:
+               endtime = starttime + timedelta(days=DAYS)
+           else:
+               endtime = points_drifter['time'][-1]
+        else:                  # if '30yr' or 'GOM3'
+            starttime = points_drifter['time'][0]
+            endtime = points_drifter['time'][-1]
+            lon, lat = points_drifter['lon'][0], points_drifter['lat'][-1]
+    elif USE == 'FORECAST':
         starttime = points_drifter['time'][-1]
         endtime = starttime + timedelta(days=DAYS) 
         lon, lat = points_drifter['lon'][-1], points_drifter['lat'][-1]
-    if GRID == '30yr':
-        starttime = points_drifter['time'][0]
-        endtime = points_drifter['time'][-1]
-        lon, lat = points_drifter['lon'][0], points_drifter['lat'][0]
+
     # read data points from fvcom and roms websites and store them
 
     #set latitude and longitude arrays for basemap
