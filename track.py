@@ -34,7 +34,7 @@ DEPTH = -1.                  # depth of drogue in meters
 # starttime = datetime(2011,5,12,13,0,0,0,pytz.UTC)
 starttime = None             # If it's None, use the current time.
 DAYS = 1                     # Number or None. Length of time wanted in track, if not given, track to the last poistion of drifter.
-MODEL = 'BOTH'               # 'FVCOM', 'ROMS' or 'BOTH'
+MODEL = 'ROMS'               # 'FVCOM', 'ROMS' or 'BOTH'
 GRID = 'GOM3'                # '30yr', 'GOM3' or 'massbay'(both 'GOM3' and 'massbay' are forecast), only used in fvcom.
 
 for ID in drifter_ids:
@@ -120,4 +120,4 @@ for ID in drifter_ids:
     plt.ylabel('Latitude')
     plt.show()
     # plt.savefig('plots/'+MODEL+str(ID)+'.png')
-    plt.savefig('MODEL-' + str(ID) +'-%s.png' % f, dpi=200)
+    plt.savefig('ID-' + str(ID) +'-%s.png' % USE, dpi=200)
