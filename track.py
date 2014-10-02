@@ -42,34 +42,32 @@ for ID in drifter_ids:
     drifter = get_drifter(ID, FILENAME)# New drifter data or old drifter data
     points_drifter = drifter.get_track(starttime,DAYS)
     if USE == 'HINDCAST':
-        # adjust for the added 5 hours in the models
-        if GRID == 'massbay':
-           time1 = pytz.utc.localize(datetime.now().replace(hour=0,minute=0))-timedelta(days=3)
-           # get starttime, and lon, lat
-           if starttime:
-               if starttime < time1:
-                   raise Exception('start time should be later than time that 3days before today.')
-               l1 = points_drifter['time']-points_drifter['time'][0]
-               l2 = starttime - points_drifter['time'][0]
-               index = np.where(abs(l1-l2)==min(abs(l1-l2)))[0][0]
-               lon, lat = points_drifter['lon'][index], points_drifter['lat'][index]
-           else:
-               starttime = time1
-               lon, lat = points_drifter['lon'][0], points_drifter['lat'][0]
-           # get endtime
-           if DAYS:
-               endtime = starttime + timedelta(days=DAYS)
-           else:
-               endtime = points_drifter['time'][-1]
-        else:                  # if '30yr' or 'GOM3'
-            starttime = points_drifter['time'][0]
-            endtime = points_drifter['time'][-1]
-            lon, lat = points_drifter['lon'][0], points_drifter['lat'][0]
+        if MODEL in ("FVCOM", "BOTH"):
+            assert GRID=="30yr"
+        starttime = points_drifter['time'][0]
+        endtime = points_drifter['time'][-1]
+        lon, lat = points_drifter['lon'][0], points_drifter['lat'][0]
     elif USE == 'FORECAST':
-        starttime = points_drifter['time'][-1]
-        endtime = starttime + timedelta(days=DAYS) 
-        lon, lat = points_drifter['lon'][-1], points_drifter['lat'][-1]
-
+        # adjust for the added 4 hours in the models
+        time1 = pytz.utc.localize(datetime.now().replace(hour=0,minute=0))-timedelta(days=3)
+        # get starttime, and lon, lat
+        if starttime:
+            if starttime < time1:
+                raise Exception('start time should be later than the time that 3days before today.')
+            l1 = points_drifter['time']-points_drifter['time'][0]
+            l2 = starttime - points_drifter['time'][0]
+            index = np.where(abs(l1-l2)==min(abs(l1-l2)))[0][0]
+            lon, lat = points_drifter['lon'][index], points_drifter['lat'][index]
+        else:
+            starttime = point_drifter['time'][-1]
+            if starttime < time1:
+                raise Exception('starttime should be later than the time that 3days before today, drifter is too old')
+            lon, lat = points_drifter['lon'][-1], points_drifter['lat'][-1]
+        # get endtime
+        if DAYS:
+            endtime = starttime + timedelta(days=DAYS)
+        else:
+            endtime = points_drifter['time'][-1]
     # read data points from fvcom and roms websites and store them
 
     #set latitude and longitude arrays for basemap
