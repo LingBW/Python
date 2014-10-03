@@ -28,8 +28,8 @@ from track_functions import * # all homegrown functions needed for this routine
 #drifter_ids = ['115410701','118410701','108410712','108420701','110410711','110410712','110410713','110410714',
 #               '110410715','110410716','114410701','115410701','115410702','119410714','135410701','110410713','119410716']                                                  # Default drifter ID
 drifter_ids = ['147420706']  # ['147420706', '146410702','148410723', '148410701','148410727', '148410729'] ['138410721']
-USE = 'HINDCAST'             # 'FORECAST' or 'HIHDCAST'
-FILENAME = 'drift_X.dat'              # if new data, use "drift_X.dat".
+MODE = 'HINDCAST'             # 'FORECAST' or 'HIHDCAST'
+INPUT_DATA = 'drift_X.dat'              # if new data, use "drift_X.dat".
 DEPTH = -1.                  # depth of drogue in meters
 # starttime = datetime(2011,5,12,13,0,0,0,pytz.UTC)
 starttime = None             # If it's None, use the current time.
@@ -39,15 +39,15 @@ GRID = 'GOM3'                # '30yr', 'GOM3' or 'massbay'(both 'GOM3' and 'mass
 
 for ID in drifter_ids:
     print "ID: ", ID
-    drifter = get_drifter(ID, FILENAME)# New drifter data or old drifter data
+    drifter = get_drifter(ID, INPUT_DATA)# New drifter data or old drifter data
     points_drifter = drifter.get_track(starttime,DAYS)
-    if USE == 'HINDCAST':
+    if MODE == 'HINDCAST':
         if MODEL in ("FVCOM", "BOTH"):
             assert GRID=="30yr"
         starttime = points_drifter['time'][0]
         endtime = points_drifter['time'][-1]
         lon, lat = points_drifter['lon'][0], points_drifter['lat'][0]
-    elif USE == 'FORECAST':
+    elif MODE == 'FORECAST':
         # adjust for the added 4 hours in the models
         time1 = pytz.utc.localize(datetime.now().replace(hour=0,minute=0))-timedelta(days=3)
         # get starttime, and lon, lat
@@ -118,4 +118,4 @@ for ID in drifter_ids:
     plt.ylabel('Latitude')
     plt.show()
     # plt.savefig('plots/'+MODEL+str(ID)+'.png')
-    plt.savefig('ID-' + str(ID) +'-%s.png' % USE, dpi=200)
+    plt.savefig('ID-' + str(ID) +'-%s.png' % MODE, dpi=200)
