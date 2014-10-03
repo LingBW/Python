@@ -59,7 +59,7 @@ for ID in drifter_ids:
             index = np.where(abs(l1-l2)==min(abs(l1-l2)))[0][0]
             lon, lat = points_drifter['lon'][index], points_drifter['lat'][index]
         else:
-            starttime = point_drifter['time'][-1]
+            starttime = points_drifter['time'][-1]
             if starttime < time1:
                 raise Exception('starttime should be later than the time that 3days before today, drifter is too old')
             lon, lat = points_drifter['lon'][-1], points_drifter['lat'][-1]
