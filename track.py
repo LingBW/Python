@@ -21,18 +21,18 @@ import pytz
 import pandas as pd
 sys.path.append('../bin')
 import netCDF4 
-from track_functions import * # all homegrown functions needed for this routine
+from track_functions import get_drifter, get_fvcom, get_roms, draw_basemap, distance # all homegrown functions needed for this routine
 
 # Step 2: Hardcode constants
 # some of the drifters apparently test by Conner
 #drifter_ids = ['115410701','118410701','108410712','108420701','110410711','110410712','110410713','110410714',
 #               '110410715','110410716','114410701','115410701','115410702','119410714','135410701','110410713','119410716']                                                  # Default drifter ID
 drifter_ids = ['147420706']  # ['147420706', '146410702','148410723', '148410701','148410727', '148410729'] ['138410721']
-MODE = 'HINDCAST'             # 'FORECAST' or 'HIHDCAST'
-INPUT_DATA = 'drift_X.dat'              # if new data, use "drift_X.dat".
+MODE = 'HINDCAST'            # 'FORECAST' or 'HIHDCAST'
+INPUT_DATA = 'drift_X.dat'   # if raw data, use "drift_X.dat";if want to get drifter data in database, use "None" 
 DEPTH = -1.                  # depth of drogue in meters
 # starttime = datetime(2011,5,12,13,0,0,0,pytz.UTC)
-starttime = None             # If it's None, use the current time.
+starttime = None             # If it's None, use the last drifter time.
 DAYS = 1                     # Number or None. Length of time wanted in track, if not given, track to the last poistion of drifter.
 MODEL = 'ROMS'               # 'FVCOM', 'ROMS' or 'BOTH'
 GRID = 'GOM3'                # '30yr', 'GOM3' or 'massbay'(both 'GOM3' and 'massbay' are forecast), only used in fvcom.
@@ -67,13 +67,13 @@ for ID in drifter_ids:
         if DAYS:
             endtime = starttime + timedelta(days=DAYS)
         else:
-            endtime = points_drifter['time'][-1]
+            endtime = starttime + timedelta(days=3)
     # read data points from fvcom and roms websites and store them
 
     #set latitude and longitude arrays for basemap
     lonsize = [min(points_drifter['lon']), max(points_drifter['lon'])]
     latsize = [min(points_drifter['lat']), max(points_drifter['lat'])]
-    diff_lon = (lonsize[0]-lonsize[1])*4
+    diff_lon = (lonsize[0]-lonsize[1])*4 # leave space in sides
     diff_lat = (latsize[1]-latsize[0])*4
     lonsize = [lonsize[0]-diff_lon,lonsize[1]+diff_lon]
     latsize = [latsize[0]-diff_lat,latsize[1]+diff_lat]
@@ -112,7 +112,7 @@ for ID in drifter_ids:
     ax.plot(points_roms['lon'],points_roms['lat'], 'go-', label='roms')
     '''
     # ax.plot(points_drifter['lon'][0],points_drifter['lat'][0],'c.',label='Startpoint',markersize=20)
-    plt.title('ID: {0}   {1}   {2} days'.format(ID, starttime.strftime("%Y-%m-%d"), DAYS))
+    plt.title('ID: {0}, {1} to {2}'.format(ID, starttime.strftime("%m/%d/%Y %H:%M"), endtime.strftime("%m/%d/%Y %H:%M")))
     plt.legend(loc='lower right')
     plt.xlabel('Longitude')
     plt.ylabel('Latitude')
