@@ -64,7 +64,6 @@ def getrawdrift(did,filename):
    routine to get raw drifter data from ascii files posted on the web
    '''
    url='http://nefsc.noaa.gov/drifter/'+filename
-   print url
    df=pd.read_csv(url,header=None, delimiter=r"\s+")
    # make a datetime
    dtime=[]
@@ -477,7 +476,6 @@ class get_roms(track):
             dy = 60*60*float(v_p)
             lon = lon + dx/(111111*np.cos(lat*np.pi/180))
             lat = lat + dy/111111
-            print lon, lat
             try:
                 index, nearestdistance = self.nearest_point_index(lon,lat,lons,lats)
             except(Exception):
@@ -509,7 +507,6 @@ class get_fvcom(track):
                 yearnum = starttime.year-1981
                 standardtime = datetime.strptime(str(starttime.year)+'-01-01 00:00:00',
                                                  '%Y-%m-%d %H:%M:%S')
-                print yearnum
                 index1 = int(26340+35112*(yearnum/4)+8772*(yearnum%4)+1+self.hours)
                 index2 = index1 + self.hours
                 furl = 'http://www.smast.umassd.edu:8080/thredds/dodsC/fvcom/hindcasts/30yr_gom3?h[0:1:48450],lat[0:1:48450],latc[0:1:90414],lon[0:1:48450],lonc[0:1:90414],u[{0}:1:{1}][0:1:44][0:1:90414],v[{0}:1:{1}][0:1:44][0:1:90414],siglay,h'
