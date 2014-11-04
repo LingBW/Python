@@ -5,7 +5,7 @@ Here we post a variety of code related to tracking particles through numerical f
 
 The most up-to-date merged code is in "track.py" which uses functions stored in "track_functions.py".
 A flowchart is available soon.
-pakekfkl
+
 The older version of this code is organized in various subdirectories according to its basic function.
 
 The subdirectory "web_track", for example, contains the work of Jian Cui with a program called "track_cmp.py".
