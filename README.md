@@ -4,6 +4,7 @@ Python
 Here we post a variety of code related to tracking particles through numerical fields and comparing them to drifter tracks.
 
 The most up-to-date merged code is in "track.py" which uses functions stored in "track_functions.py".
+A flowchart is available soon.
 
 The older version of this code is organized in various subdirectories according to its basic function.
 
